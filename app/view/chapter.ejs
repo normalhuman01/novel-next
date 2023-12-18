@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= name %></title>
+    <link rel="stylesheet" href="/static/css/GeistUi-style.css"/>
+    <link rel="stylesheet" href="/static/css/reset.css"/>
+    <style>
+        p {
+            margin: .4rem;
+            text-indent: 2em
+        }
+    </style>
+</head>
+<body class="<%= theme %>">
+<section class="root">
+    <h1><%= name %></h1>
+    <section class="loading"></section>
+    <section id="app"></section>
+</section>
+
+<script type="text/template" id="tpl">
+    <section>
+        <h3>{{ chapter.title }}</h3>
+        <div v-html="chapter.content"></div>
+    </section>
+</script>
+</body>
+<script src="/static/script/g.js"></script>
+<script src="/static/script/vue.min.js"></script>
+<script src="/static/script/socket.io.min.js"></script>
+<script>
+    const url = new URLSearchParams(window.location.search);
+    const oKey = url.get('o');
+    const title = url.get('t');
+    const loading = document.querySelector('.loading');
+
+    // render page
+    function render(chapter) {
+        new Vue({
+            el: '#app',
+            template: document.getElementById('tpl').innerText,
+            data: {
+                chapter
+            },
+            methods: {
+                formatUrl(href) {
+                    return `/chapter?o=${oKey}&t=${encodeURIComponent(title)}&u=${encodeURIComponent(href)}}`
+                }
+            }
+        });
+    }
+
+    // socket
+    const socket = ws();
+    socket.on('process', s => {
+        appendMessage('p', s);
+    });
+    socket.on('processError', s => {
+        appendMessage('e', s);
+    });
+    socket.on('processSuccess', s => {
+        appendMessage('s', s);
+        requestAnimationFrame(() => {
+            loading.remove();
+        })
+    });
+
+    // request
+    requestPost('/novel/chapter', {
+        url: url.get('u'),
+        origin: oKey
+    }).then(res => {
+        if (res.code) {
+            render(res.data);
+        }
+    });
+
+    function appendMessage(type, s) {
+        console.log(s);
+        const t = {
+            p: 'zi-note hint',
+            e: 'zi-note error',
+            s: 'zi-note hint',
+        }
+        const html = document.createElement('p');
+        html.className = t[type];
+        html.innerHTML = `<span class="zi-note-type">NOTE:</span> ${s}`;
+        loading.appendChild(html);
+    }
+</script>
+</html>

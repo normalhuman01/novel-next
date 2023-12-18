@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= name %></title>
+    <link rel="stylesheet" href="/static/css/GeistUi-style.css" />
+    <link rel="stylesheet" href="/static/css/reset.css" />
+    <style>
+        .row a {color: var(--geist-secondary)}
+        .arrow {position: fixed;bottom: 3rem;right: 3rem;z-index: 99;transition: all .3s;}
+        .bottom {transform: rotate(180deg);}
+    </style>
+</head>
+<body class="<%= theme %>">
+<section class="root">
+    <section class="loading"></section>
+    <section id="app"></section>
+</section>
+
+<script type="text/template" id="tpl">
+   <div class="zi-fieldset">
+       <section class="row" style="padding: 1.25rem">
+           <section class="col-12 col-md-3">
+               <img width="145" :src="book.image" />
+           </section>
+           <section class="col-12 col-md-9">
+               <h1 class="m-0">
+                   <span>{{ book.title }} </span>
+                   <small>{{ book.author }}</small>
+               </h1>
+               <p>{{ book.description }}</p>
+               <span v-if="book.newChapter">最新章节: {{ book.newChapter }}</span>
+               <p v-show="!isDownload" @click="donwload">下载</p>
+               <p v-show="isDownload">
+                   <progress :value="progress" :max.once="list.length"></progress>
+                   <span>{{ progress + '/' + list.length }}</span>
+               </p>
+           </section>
+       </section>
+       <div class="zi-fieldset-footer">
+           <section class="row">
+               <div v-for="item in list" :key="item.href" class="col-12 col-md-4 mt-2">
+                   <a :href="formatUrl(item.href)" target="_blank">
+                       {{ item.title }}
+                   </a>
+               </div>
+           </section>
+       </div>
+       <div class="top" style="display: none">
+           <svg width="24" viewBox="0 0 75 65" fill="#000" style="margin-top: -3px;"><path d="M37.59.25l36.95 64H.64l36.95-64z"></path></svg>
+       </div>
+
+   </div>
+</script>
+
+<script src="/static/script/g.js"></script>
+<script src="/static/script/vue.min.js"></script>
+<script src="/static/script/socket.io.min.js"></script>
+<script>
+    const url = new URLSearchParams(window.location.search);
+    const oKey = url.get('o');
+    const title = url.get('t');
+    const loading = document.querySelector('.loading');
+
+    // render page
+    function render(book, list) {
+        new Vue({
+            el: '#app',
+            template: document.getElementById('tpl').innerText,
+            data: {
+                book,
+                list,
+                isDownload: false,
+                progress: 0,
+            },
+            methods: {
+                formatUrl(href) {
+                    return `/chapter?o=${oKey}&t=${encodeURIComponent(title)}&u=${encodeURIComponent(href)}`
+                },
+                donwload() {
+                    this.isDownload = true;
+                    // socket
+                    const socket = ws();
+                    socket.on('downloading', s => {
+                        this.progress += 1;
+                    });
+                    socket.on('downloadError', s => {
+                        console.log('error');
+                    });
+                    socket.on('downloadSuccess', s => {
+                        console.log('success');
+                        // socket.off();
+                    });
+                    requestPost('/novel/download', {
+                        url: url.get('u'),
+                        origin: oKey
+                    }).then(res => {
+                        const {path , title} = res.data;
+                        const dom = document.createElement('a');
+                        dom.download = title + '.txt';
+                        dom.href = path;
+                        dom.click();
+                    })
+                }
+            }
+        });
+    }
+
+    // socket
+    const socket = ws();
+    socket.on('process', s => {
+        appendMessage('p', s);
+    });
+    socket.on('processError', s => {
+        appendMessage('e', s);
+    });
+    socket.on('processSuccess', s => {
+        appendMessage('s', s);
+        requestAnimationFrame(() => {
+            loading.remove();
+        })
+    });
+
+    // request
+    requestPost('/novel/info', {
+        url: url.get('u'),
+        origin: oKey
+    }).then(res => {
+        if (res.code) {
+            const { list, ...book } = res.data;
+            console.log(list.length);
+            render(book, list);
+        }
+    });
+
+    function appendMessage(type, s) {
+        console.log(s);
+        const t = {
+            p: 'zi-note hint',
+            e: 'zi-note error',
+            s: 'zi-note hint',
+        }
+        const html = document.createElement('p');
+        html.className = t[type];
+        html.innerHTML = `<span class="zi-note-type">NOTE:</span> ${s}`;
+        loading.appendChild(html);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Novel</title>
+  <link rel="stylesheet" href="/static/css/GeistUi-style.css" />
+  <link rel="stylesheet" href="/static/css/reset.css" />
+</head>
+<body class="<%= theme %>">
+  <section class="root">
+    <h1>📚 Novel</h1>
+    <section>
+      <br />
+      <input class="zi-input" onchange="change(this)" name="name" type="text" />
+      <div>
+        <br />
+        <label>
+          <input onclick="tap(this)" name="origins" type="checkbox" value="biququ">
+          <span>笔趣趣</span>
+        </label>
+      </div>
+      <br />
+      <button class="zi-btn primary" onclick="search()">搜索</button>
+    </section>
+  </section>
+
+<script src="/static/script/g.js"></script>
+<script>
+  const data = {
+    name: '',
+    origins: new Set()
+  }
+  function change(e) {
+    data[e.name] = e.value;
+  }
+  function tap(e) {
+    data[e.name][e.checked ? 'add' : 'delete'](e.value);
+  }
+
+  function search() {
+    const origins = Array.from(data.origins);
+    if (origins.length === 0) {
+      alert('error');
+      return false;
+    }
+    const url = new URLSearchParams();
+    url.append('t', data.name);
+    origins.forEach(v => {
+      url.append('o', v);
+    })
+
+    window.location.href = `/search?${url.toString()}`;
+  }
+</script>
+</body>
+</html>

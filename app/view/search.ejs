@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title><%= name %></title>
+    <link rel="stylesheet" href="/static/css/GeistUi-style.css" />
+    <link rel="stylesheet" href="/static/css/reset.css" />
+    <style>
+        .zi-card { margin-top: 1rem }
+    </style>
+</head>
+<body class="<%= theme %>">
+<section class="root">
+    <h1>
+        🔍 <%= name %>
+    </h1>
+    <section id="app"></section>
+</section>
+
+<script type="text/template" id="tpl">
+    <section>
+        <section v-if="isLoad">
+            <progress :value="progress" :max.once="total"></progress>
+            <h2>
+                <b>{{ progress }}</b>
+                <small>/{{ total }}</small>
+            </h2>
+        </section>
+        <section v-else>
+            <p>
+                <span class="zi-tag success">共{{ success.length }}条</span>
+                <span v-for="(item) in fail" :key="item.key" class="zi-tag danger">{{ item.key + ':' + item.message }}</span>
+            </p>
+            <book-item v-for="(item) in success" :key="item.href" :book="item" />
+        </section>
+    </section>
+</script>
+<script type="text/template" id="bookItem">
+    <div class="zi-card">
+        <h3>
+            <a :href="formatUrl(book)">{{ book.title }}</a>
+            <small>{{ book.author }}</small>
+        </h3>
+        <p>
+            <span>{{ book.newChapter }}</span>
+            <span>{{ book.updated }}</span>
+        </p>
+        <small>
+            数据来自:
+            <span class="zi-tag">{{ book.oName }}</span>
+        </small>
+    </div>
+</script>
+</body>
+</html>
+<script src="/static/script/g.js"></script>
+<script src="/static/script/vue.min.js"></script>
+<script src="/static/script/socket.io.min.js"></script>
+<script>
+    const url = new URLSearchParams(window.location.search);
+
+    // render page
+    const app = new Vue({
+        el: '#app',
+        template: document.getElementById('tpl').innerText,
+        data: {
+            isLoad: true,
+            progress: 0,
+            total: url.getAll('o').length,
+            success: [],
+            fail: []
+        }
+    });
+
+    // socket
+    const socket = ws();
+
+    socket.on('searchResult', s => {
+        console.log(s);
+        app.progress += 1;
+    });
+
+    // request
+    requestPost('/novel/search', {
+        name: url.get('t'),
+        origins: url.getAll('o')
+    }).then(res => {
+        app.success = res.data.success;
+        app.fail = res.data.fail;
+        app.isLoad = false;
+    });
+
+    Vue.component('book-item', {
+        props: ['book'],
+        template: document.getElementById('bookItem').innerText,
+        methods: {
+            formatUrl(b) {
+                return `/book?o=${b.oKey}&t=${encodeURIComponent(b.title)}&u=${encodeURIComponent(b.url)}`
+            }
+        }
+    });
+</script>
