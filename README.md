@@ -1,4 +1,4 @@
-# novel-website
+# light-novel-web
 
 website to read novels
 
