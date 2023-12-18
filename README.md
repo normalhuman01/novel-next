@@ -1,6 +1,6 @@
 # novel-website
 
-📚 Crawl websites for online novels
+website to read novels
 
 ### Status
 
