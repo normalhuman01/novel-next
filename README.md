@@ -1,23 +1,15 @@
-# light-novel-web
+# novel-next
 
-website to read novels
+This is a website where you can find a selection of your favorite light novels from Japan for free. You can search for your favorite novels using the following link:
 
-### Status
+[Buscar Novelas](https://www.biququ.la/search.php?keyword={search})
 
-Finish 
+Additionally, all novels featured on this site are obtained from the following source:
 
-### Quickstart
+[Fuente de Novelas](http://www.biququ.info)
 
-1. Delete the .local suffix of the .env.local file
-2. ```npm install```
-3. ```npm run dev```
-4. Browser visit localhost:8080
+Enjoy reading your favorite novels!
 
-#### Service
+## Licence
 
-- Nodejs
-- Redis
-- ~~Mysql~~
-
-
-
+MIT
