@@ -4,7 +4,7 @@ website to read novels
 
 ### Status
 
-🚧 In development
+Finish 
 
 ### Quickstart
 
